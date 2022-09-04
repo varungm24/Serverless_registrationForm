@@ -1,0 +1,82 @@
+service: serverless-registration
+frameworkVersion: '3'
+
+plugins:
+  - serverless-offline
+
+custom:
+  tableName: 'users-table-${sls:stage}'
+  tableName2: 'incresco-table-${sls:stage}'
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: dev
+  region: ap-south-1
+  profile: registration
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - Fn::GetAtt: [ UsersTable, Arn ]
+            - Fn::GetAtt: [ IncrescoTable, Arn ]
+  environment:
+    USERS_TABLE: ${self:custom.tableName}
+    INCRESCO_TABLE: ${self:custom.tableName2}
+
+functions:
+  newapi2:
+    name: NewRegistration2
+    handler: lookUp.lookUp1
+    events:
+      - httpApi: '*' 
+  newapi:
+    name: NewRegistration
+    handler: handler.handler1
+    events:
+      - httpApi: '*' 
+    
+
+
+resources:
+  Resources:
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: PK
+            AttributeType: S
+          - AttributeName: SK
+            AttributeType: S
+        KeySchema:
+          - AttributeName: PK
+            KeyType: HASH
+          - AttributeName: SK
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.tableName}
+
+    IncrescoTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: PK
+            AttributeType: S
+          - AttributeName: SK
+            AttributeType: S
+        KeySchema:
+          - AttributeName: PK
+            KeyType: HASH
+          - AttributeName: SK
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.tableName2}
+    
